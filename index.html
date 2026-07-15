@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>clamp() generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg: #0b0d12;
+    --panel: #12151c;
+    --panel-2: #171b24;
+    --line: #262b36;
+    --text: #e7e9ee;
+    --muted: #8991a3;
+    --accent: #5ee0c0;
+    --accent-dim: #2c5a4f;
+    --warn: #f2a65a;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 28px 16px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap{ max-width: 780px; margin: 0 auto; }
+
+  .eyebrow{
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+
+  h1{
+    font-size: 22px;
+    margin: 0 0 4px;
+    font-weight: 700;
+  }
+
+  .sub{
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  .card{
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px;
+  }
+
+  .prop-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom: 22px;
+  }
+  .prop-tab{
+    flex:1;
+    text-align:center;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .prop-tab.active{
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .group-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+  }
+
+  .unit-toggle{
+    display:flex;
+    gap:2px;
+    background: #0b0d12;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 2px;
+  }
+  .unit-toggle button{
+    border:none;
+    background:transparent;
+    color: var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .unit-toggle button.active{
+    background: var(--accent);
+    color: #0b0d12;
+    font-weight: 600;
+  }
+
+  .field-pair{ display:flex; gap: 12px; }
+
+  .field{
+    flex:1;
+    background: #0b0d12;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .field label{
+    display:block;
+    font-size: 10.5px;
+    color: var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:.06em;
+    margin-bottom: 4px;
+  }
+  .field input{
+    width:100%;
+    background:transparent;
+    border:none;
+    outline:none;
+    color: var(--text);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .field.auto input{ color: var(--accent); }
+  .field.locked{ opacity: .55; }
+
+  .auto-row{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .auto-row input[type="checkbox"]{ accent-color: var(--accent); width:14px; height:14px; }
+  .auto-row .hint{ font-size: 11px; color: #5c6377; }
+
+  .divider{
+    height:1px;
+    background: var(--line);
+    margin: 22px 0;
+  }
+
+  .output{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    background: #0b0d12;
+    border: 1px solid var(--accent-dim);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .output code{
+    flex:1;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    word-break: break-all;
+  }
+  .output code .kw{ color: var(--text); }
+  .copy-btn{
+    background: var(--accent);
+    color: #0b0d12;
+    border:none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-weight: 700;
+    font-size: 12.5px;
+    font-family:'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .1s ease;
+  }
+  .copy-btn:active{ transform: scale(.96); }
+  .copy-btn.copied{ background: #7ee6cd; }
+
+  .css-line{
+    margin-top: 10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: #0b0d12;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .css-line span.prop{ color: #8fb3ff; }
+
+  .warn{
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--warn);
+    display:none;
+  }
+  .warn.show{ display:block; }
+
+  .preview-section{ margin-top: 26px; }
+
+  .vw-control{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .vw-control .group-label{ margin:0; white-space:nowrap; }
+  .vw-control input[type="range"]{
+    flex:1;
+    accent-color: var(--accent);
+  }
+  .vw-readout{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 62px;
+    text-align:right;
+  }
+
+  .viewport-sim{
+    background: #0b0d12;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: width .1s ease;
+    margin: 0 auto;
+  }
+  .viewport-sim-inner{
+    padding: 24px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .preview-box{
+    background: var(--accent-dim);
+    border: 1px dashed var(--accent);
+    color: var(--text);
+    text-align:center;
+    max-width: 100%;
+  }
+  .preview-box.font-size{ background:none; border:none; font-weight:700; }
+  .preview-box .value-tag{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  footer{
+    text-align:center;
+    color: #4a5064;
+    font-size: 11px;
+    margin-top: 26px;
+    font-family:'JetBrains Mono', monospace;
+  }
+
+  @media (max-width: 560px){
+    .row{ grid-template-columns: 1fr; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">responsive values</p>
+  <h1>clamp() generator</h1>
+  <p class="sub">Set your viewport range and the largest value the property should reach. The minimum value is calculated automatically so the size scales at the same rate as the viewport — override it any time.</p>
+
+  <div class="card">
+
+    <div class="prop-tabs">
+      <button class="prop-tab active" data-prop="font-size">font-size</button>
+      <button class="prop-tab" data-prop="padding">padding</button>
+      <button class="prop-tab" data-prop="margin">margin</button>
+    </div>
+
+    <div class="row">
+      <div>
+        <div class="group-label">
+          Values
+          <div class="unit-toggle" id="valueUnitToggle">
+            <button class="active" data-unit="px">px</button>
+            <button data-unit="rem">rem</button>
+          </div>
+        </div>
+        <div class="field-pair">
+          <div class="field" id="minField">
+            <label>MIN</label>
+            <input type="number" id="minInput" step="0.1">
+          </div>
+          <div class="field" id="maxField">
+            <label>MAX</label>
+            <input type="number" id="maxInput" value="18" step="0.1">
+          </div>
+        </div>
+        <div class="auto-row">
+          <span class="hint" id="autoHint">Fill either field — the other calculates from the viewport ratio.</span>
+        </div>
+        <div class="auto-row" id="negRow" style="display:none;">
+          <span class="hint">margin can be negative — that's fine here too</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="group-label">Viewport (px) <span style="color:var(--warn); font-weight:600;">*required</span></div>
+        <div class="field-pair">
+          <div class="field">
+            <label>MIN</label>
+            <input type="number" id="vwMinInput" value="1280" step="10" required>
+          </div>
+          <div class="field">
+            <label>MAX</label>
+            <input type="number" id="vwMaxInput" value="1440" step="10" required>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn" id="warnMsg">Viewport max must be greater than viewport min.</div>
+
+    <div class="divider"></div>
+
+    <div class="output">
+      <code id="clampOutput">clamp(1rem, 1.25vw, 1.125rem)</code>
+      <button class="copy-btn" id="copyBtn">copy</button>
+    </div>
+    <div class="css-line" id="cssLine"></div>
+
+    <div class="preview-section">
+      <div class="vw-control">
+        <div class="group-label">Preview at</div>
+        <input type="range" id="vwSlider" min="320" max="1920" value="1280">
+        <div class="vw-readout" id="vwReadout">1280px</div>
+      </div>
+      <div class="viewport-sim" id="viewportSim">
+        <div class="viewport-sim-inner">
+          <div class="preview-box" id="previewBox">
+            Responsive sample
+            <span class="value-tag" id="previewTag">18px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>works for any property that accepts a length value</footer>
+</div>
+
+<script>
+(function(){
+  const state = {
+    prop: 'font-size',
+    unit: 'px',
+    lastEdited: 'max', // which of min/max the person typed into most recently
+  };
+
+  const els = {
+    tabs: document.querySelectorAll('.prop-tab'),
+    unitBtns: document.querySelectorAll('#valueUnitToggle button'),
+    minInput: document.getElementById('minInput'),
+    maxInput: document.getElementById('maxInput'),
+    minField: document.getElementById('minField'),
+    maxField: document.getElementById('maxField'),
+    vwMin: document.getElementById('vwMinInput'),
+    vwMax: document.getElementById('vwMaxInput'),
+    warn: document.getElementById('warnMsg'),
+    output: document.getElementById('clampOutput'),
+    cssLine: document.getElementById('cssLine'),
+    copyBtn: document.getElementById('copyBtn'),
+    negRow: document.getElementById('negRow'),
+    vwSlider: document.getElementById('vwSlider'),
+    vwReadout: document.getElementById('vwReadout'),
+    viewportSim: document.getElementById('viewportSim'),
+    previewBox: document.getElementById('previewBox'),
+    previewTag: document.getElementById('previewTag'),
+  };
+
+  const REM = 16;
+
+  function toPx(val, unit){ return unit === 'rem' ? val * REM : val; }
+  function fromPx(val, unit){ return unit === 'rem' ? val / REM : val; }
+  function round(n, dp){ const f = Math.pow(10, dp); return Math.round(n * f) / f; }
+
+  function currentValues(){
+    const unit = state.unit;
+    const dp = unit === 'rem' ? 3 : 1;
+    const vwMinPx = parseFloat(els.vwMin.value) || 0;
+    const vwMaxPx = parseFloat(els.vwMax.value) || 0;
+    const ratio = vwMaxPx > 0 ? vwMinPx / vwMaxPx : 1; // how much the viewport shrinks by
+
+    let minDisplay = parseFloat(els.minInput.value) || 0;
+    let maxDisplay = parseFloat(els.maxInput.value) || 0;
+
+    if (state.lastEdited === 'max') {
+      // derive min from max at the same ratio the viewport shrinks
+      minDisplay = round(maxDisplay * ratio, dp);
+      els.minInput.value = minDisplay;
+    } else {
+      // derive max from min at the same ratio, the other way
+      maxDisplay = ratio > 0 ? round(minDisplay / ratio, dp) : minDisplay;
+      els.maxInput.value = maxDisplay;
+    }
+
+    return { unit, minDisplay, maxDisplay, vwMinPx, vwMaxPx };
+  }
+
+  function buildClamp(){
+    const { unit, minDisplay, maxDisplay, vwMinPx, vwMaxPx } = currentValues();
+
+    const validVw = vwMaxPx > vwMinPx;
+    els.warn.classList.toggle('show', !validVw);
+    els.copyBtn.disabled = !validVw;
+
+    if (!validVw) {
+      els.output.innerHTML = '<span class="kw">clamp(</span>—<span class="kw">)</span>';
+      els.cssLine.textContent = '';
+      return null;
+    }
+
+    const minPx = toPx(minDisplay, unit);
+    const maxPx = toPx(maxDisplay, unit);
+
+    const slope = (maxPx - minPx) / (vwMaxPx - vwMinPx); // px per px of viewport
+    const slopeVw = slope * 100; // px per 1vw
+    const interceptPx = minPx - slope * vwMinPx; // value at 0 viewport width
+
+    const lo = Math.min(minDisplay, maxDisplay);
+    const hi = Math.max(minDisplay, maxDisplay);
+
+    const unitLabel = unit;
+    const dp = unit === 'rem' ? 3 : 2;
+
+    let preferredStr;
+    if (unit === 'rem') {
+      const interceptRem = round(interceptPx / REM, dp);
+      preferredStr = (interceptRem === 0 ? '' : interceptRem + 'rem + ') + round(slopeVw, dp) + 'vw';
+    } else {
+      preferredStr = round(interceptPx, dp) + 'px + ' + round(slopeVw, dp) + 'vw';
+    }
+
+    const loStr = round(lo, dp) + unitLabel;
+    const hiStr = round(hi, dp) + unitLabel;
+
+    const clampStr = 'clamp(' + loStr + ', ' + preferredStr + ', ' + hiStr + ')';
+
+    els.output.innerHTML =
+      '<span class="kw">clamp(</span>' + loStr + '<span class="kw">, </span>' +
+      preferredStr + '<span class="kw">, </span>' + hiStr + '<span class="kw">)</span>';
+
+    const propName = state.prop;
+    els.cssLine.innerHTML = '<span class="prop">' + propName + '</span>: ' + clampStr + ';';
+
+    return { clampStr, minPx, maxPx, vwMinPx, vwMaxPx, slope, interceptPx };
+  }
+
+  function updatePreview(clampData){
+    const vw = parseFloat(els.vwSlider.value);
+    els.vwReadout.textContent = vw + 'px';
+
+    // simulate the viewport container width, capped for display
+    const simWidth = Math.max(240, Math.min(vw, 760));
+    els.viewportSim.style.width = simWidth + 'px';
+
+    if (!clampData) return;
+    const { minPx, maxPx, slope, interceptPx } = clampData;
+    let valuePx = interceptPx + slope * vw;
+    valuePx = Math.max(Math.min(minPx, maxPx), Math.min(valuePx, Math.max(minPx, maxPx)));
+
+    els.previewBox.className = 'preview-box' + (state.prop === 'font-size' ? ' font-size' : '');
+
+    if (state.prop === 'font-size') {
+      els.previewBox.style.fontSize = valuePx + 'px';
+      els.previewBox.style.padding = '0';
+      els.previewBox.style.margin = '0';
+    } else if (state.prop === 'padding') {
+      els.previewBox.style.fontSize = '14px';
+      els.previewBox.style.padding = Math.max(valuePx, 0) + 'px';
+      els.previewBox.style.margin = '0';
+    } else {
+      els.previewBox.style.fontSize = '14px';
+      els.previewBox.style.padding = '14px';
+      els.previewBox.style.margin = valuePx + 'px';
+    }
+
+    els.previewTag.textContent = round(valuePx, 1) + 'px';
+  }
+
+  function refresh(){
+    const clampData = buildClamp();
+    updatePreview(clampData);
+  }
+
+  // --- events ---
+
+  els.tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      els.tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      state.prop = tab.dataset.prop;
+      els.negRow.style.display = state.prop === 'margin' ? 'flex' : 'none';
+      refresh();
+    });
+  });
+
+  els.unitBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newUnit = btn.dataset.unit;
+      if (newUnit === state.unit) return;
+
+      // convert displayed min/max into the new unit
+      const oldMax = parseFloat(els.maxInput.value) || 0;
+      const oldMin = parseFloat(els.minInput.value) || 0;
+      const maxPx = toPx(oldMax, state.unit);
+      const minPx = toPx(oldMin, state.unit);
+
+      state.unit = newUnit;
+      els.unitBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const dp = newUnit === 'rem' ? 3 : 1;
+      els.maxInput.value = round(fromPx(maxPx, newUnit), dp);
+      els.maxInput.step = newUnit === 'rem' ? 0.05 : 1;
+      els.minInput.value = round(fromPx(minPx, newUnit), dp);
+      els.minInput.step = newUnit === 'rem' ? 0.05 : 1;
+
+      refresh();
+    });
+  });
+
+  function setDriving(which){
+    state.lastEdited = which;
+    els.minField.classList.toggle('locked', which === 'max');
+    els.maxField.classList.toggle('locked', which === 'min');
+  }
+
+  els.minInput.addEventListener('input', () => { setDriving('min'); refresh(); });
+  els.maxInput.addEventListener('input', () => { setDriving('max'); refresh(); });
+  [els.vwMin, els.vwMax].forEach(input => {
+    input.addEventListener('input', refresh);
+  });
+
+  els.vwSlider.addEventListener('input', () => {
+    const clampData = buildClamp();
+    updatePreview(clampData);
+  });
+
+  els.copyBtn.addEventListener('click', () => {
+    const text = els.output.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      els.copyBtn.textContent = 'copied';
+      els.copyBtn.classList.add('copied');
+      setTimeout(() => {
+        els.copyBtn.textContent = 'copy';
+        els.copyBtn.classList.remove('copied');
+      }, 1200);
+    });
+  });
+
+  // init
+  setDriving('max');
+  els.vwSlider.min = 320;
+  els.vwSlider.max = 1920;
+  refresh();
+})();
+</script>
+</body>
+</html>
